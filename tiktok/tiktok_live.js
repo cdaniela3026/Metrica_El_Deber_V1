@@ -48,7 +48,7 @@ const state = {
 let t = null;
 function scheduleSave() {
   if (t) clearTimeout(t);
-  t = setTimeout(saveNow, 300);
+  t = setTimeout(saveNow, 3000);
 }
 function saveNow() {
   try {
