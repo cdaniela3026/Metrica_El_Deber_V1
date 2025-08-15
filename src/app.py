@@ -4,8 +4,9 @@
 ## RESPONSABLE FRONT: CARLA DANIELA SORUCO MAERTENS
 #=====================================================================================
 # src/app.py — YouTube + TikTok + Facebook
-# -> 3 gráficas por pestaña: línea (tiempo real), barras (snapshot) y donut (snapshot)
+# -> 3 gráficas por pestaña: línea (tiempo real), barras  y donut 
 # -> TikTok y Youtube limpio si no hay usuario consultado
+# -> se actualizo la pestaña para tiktok que no consulte datos viejos
 # =====================================================================================
 
 
@@ -233,21 +234,6 @@ def fetch_youtube_concurrent(video_q: str) -> dict:
     _set_cached(f"yt:{vid}", out)
     return out
 
-
-def _tt_pick_item(items, req_user:str):
-    """Devuelve el item cuya statistics.username coincide con req_user (sin @, case-insensitive).
-    Si no hay coincidencia, retorna el primero disponible.
-    """
-    try:
-        ru = (req_user or "").strip().lstrip("@").lower()
-        for it in items or []:
-            s = (it.get("statistics") or {}) if isinstance(it, dict) else {}
-            un = (s.get("username") or s.get("user") or "").strip().lstrip("@").lower()
-            if ru and un and (ru == un):
-                return it
-        return (items or [None])[0]
-    except Exception:
-        return (items or [None])[0]
 def fetch_tiktok_viewers(user_q: str) -> dict:
 
     """Devuelve {'value': int, 'status': 'ok'|'warn', 'note': str}"""
@@ -257,25 +243,14 @@ def fetch_tiktok_viewers(user_q: str) -> dict:
     cache = _get_cached(f"tt:{user}", ttl=10)
     if cache: return cache
     try:
-        import time
-        data = api_get("/tiktok-stats", params={"user": user, "username": user, "_": int(time.time())})
+        data = api_get("/tiktok-stats", params={"user": user, "username": user})
         items = data.get("items", []) if isinstance(data, dict) else []
-        # Elegir el item que coincide exactamente con el username solicitado
-        if items:
-            picked = None
-            ru = user.strip().lstrip("@").lower()
-            for it in items:
-                s0 = (it.get("statistics") or {}) if isinstance(it, dict) else {}
-                un = (s0.get("username") or s0.get("user") or "").strip().lstrip("@").lower()
-                if ru and un and ru == un:
-                    picked = it; break
-            items = [picked] if picked is not None else []
         if not items:
             out = {"value": 0, "status":"warn", "note":"TT sin datos"}
         else:
             s = items[0].get("statistics", {}) or {}
-            val = int(s.get("viewers") or s.get("likes") or 0)
-            out = {"value": val, "status":"ok", "note": ""}
+            viewers = int(s.get("viewers", 0))
+            out = {"value": viewers, "status":"ok", "note": ""}
     except Exception as e:
         out = {"value": 0, "status":"warn", "note": f"TT err: {e}"}
     _set_cached(f"tt:{user}", out)
@@ -580,8 +555,7 @@ with tab_tt:
     # TikTok limpio si no hay usuario consultado
     if st.session_state.get("tt_run") and tt_user:
         try:
-            import time
-            data = api_get("/tiktok-stats", params={"user": tt_user, "username": tt_user, "_": int(time.time())})
+            data = api_get("/tiktok-stats", params={"user": tt_user, "username": tt_user})
             st.caption(f"Backend: {LOCAL_API} — /tiktok-stats  user={tt_user}")
             if isinstance(data, dict) and data.get("error"):
                 st.error(data["error"])
@@ -590,43 +564,37 @@ with tab_tt:
                 if not items:
                     st.info("Sin datos disponibles (¿el script Node está corriendo y escribiendo el JSON?).")
                 else:
-                    # Elegir el item cuyo username coincide con el solicitado
-                    picked = None
-                    ru = (tt_user or "").strip().lstrip("@").lower()
-                    for it in items:
-                        s0 = (it.get("statistics") or {}) if isinstance(it, dict) else {}
-                        un = (s0.get("username") or s0.get("user") or "").strip().lstrip("@").lower()
-                        if ru and un and ru == un:
-                            picked = it; break
-                    if picked is None:
-                        st.warning(f"El backend devolvió otro usuario. Solicité @{tt_user}. Verifica el capturador.")
-                    else:
-                        s = picked.get("statistics", {}) or {}
-                        username   = s.get("username", tt_user)
-                        likes      = int(s.get("likes", 0))
-                        comments   = int(s.get("comments", 0))
-                        viewers    = int(s.get("viewers", 0))
-                        diamonds   = int(s.get("diamonds", 0))
-                        shares     = int(s.get("shares", 0))
-                        gifts_cnt  = int(s.get("giftsCount", 0))
-                        if username:
-                            st.caption(f"Streamer: @{username}")
-                        d1, d2, d3, d4, d5, d6 = st.columns(6)
-                        d1.metric("❤️ Me gusta", f"{likes}")
-                        d2.metric("💬 Comentarios", f"{comments}")
-                        d3.metric("👀 Espectadores", f"{viewers}")
-                        d4.metric("💎 Diamantes", f"{diamonds}")
-                        d5.metric("🔁 Acciones", f"{shares}")
-                        d6.metric("🎁 Regalos", f"{gifts_cnt}")
-                        st.caption(f"Última actualización: {dt.datetime.now():%H:%M:%S}")
-                        tt_snap = {
-                            "ts": pd.Timestamp.utcnow(),
-                            "viewers": viewers,
-                            "likes": likes,
-                            "comments": comments,
-                            "diamonds": diamonds,
-                        }
+                    info = items[0]
+                    s = info.get("statistics", {}) or {}
 
+                    username   = s.get("username", tt_user)
+                    likes      = int(s.get("likes", 0))
+                    comments   = int(s.get("comments", 0))
+                    viewers    = int(s.get("viewers", 0))
+                    diamonds   = int(s.get("diamonds", 0))
+                    shares     = int(s.get("shares", 0))
+                    gifts_cnt  = int(s.get("giftsCount", 0))
+
+                    if username:
+                        st.caption(f"Streamer: @{username}")
+
+                    d1, d2, d3, d4, d5, d6 = st.columns(6)
+                    d1.metric("❤️ Me gusta", f"{likes}")
+                    d2.metric("💬 Comentarios", f"{comments}")
+                    d3.metric("👀 Espectadores", f"{viewers}")
+                    d4.metric("💎 Diamantes", f"{diamonds}")
+                    d5.metric("🔁 Acciones", f"{shares}")
+                    d6.metric("🎁 Regalos", f"{gifts_cnt}")
+
+                    st.caption(f"Última actualización: {dt.datetime.now():%H:%M:%S}")
+
+                    tt_snap = {
+                        "ts": pd.Timestamp.utcnow(),
+                        "viewers": viewers,
+                        "likes": likes,
+                        "comments": comments,
+                        "diamonds": diamonds,
+                    }
 
         except requests.HTTPError as http_err:
             try:
