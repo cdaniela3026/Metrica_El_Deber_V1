@@ -1,0 +1,55 @@
+
+----------------------------------------------------------------------------------------------------------
+PASOS PARA ARRANCAR EL PROYECTO
+----------------------------------------------------------------------------------------------------------
+1.- PRIMERO SE DEBE DIRECCIONAR A LA CARPETA
+
+cd D:\Metrica_El_Deber_V1-main
+
+----------------------------------------------
+2.-  LUEGO SE DEBE ACTIVAR EL .VENV
+
+.\.venv\Scripts\activate
+
+ -----------------------------------------------
+3.-Levantar la API (FastAPI) en el puerto 8001
+
+python -m uvicorn local_api.main:app --host 127.0.0.1 --port 8001 --reload
+
+------------------------------------------------
+4.- Levantar el frontend (Streamlit) (EN OTRA VENTANA )
+
+cd D:\Metrica_El_Deber_V1-main
+
+.\.venv\Scripts\activate
+
+streamlit run src/app.py --server.port 8502
+----------------------------------------------------------------------------------
+PARA LEVANTAR TIKTOK 
+----------------------------------------------------------------------------------
+en una ventana nueva :
+
+1.- DIRECCIONAR LA CARPETA DE TIKTOK
+
+cd "D:\Metrica_El_Deber_V1-main\tiktok"
+
+2.- npm i   # solo la primera vez o cuando se realicen cambios
+
+3.- # usuario exacto (SIN @) y JSON absoluto de salida
+
+       3.1.- $env:TIKTOK_USERNAME = "chef_josue.rc" ------(Aqui se debe poner el usuario de el deber pero para pruebas cualquier usuario que este en vivo)
+       3.2.- $env:TIKTOK_JSON_PATH = "D:\Metrica_El_Deber_V1-main\live_chef_josue.rc.json" ----- (aqui se debe colocar el mismo usuario de arriba)
+       3.3.- node .\tiktok_live.js
+
+5.- VERIFICAR QUE LA API DE TIKTOK LO ESTA VIENDO
+
+Invoke-RestMethod "http://127.0.0.1:8001/tiktok-stats?user=chef_josue.rc"
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+
+PARA MATAR EL PUERTO QUE QUEDO ABIERTO
+
+netstat -ano | findstr :8502
+
+-------------------------------------------------
+
