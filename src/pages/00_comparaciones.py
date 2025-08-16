@@ -1,5 +1,8 @@
-
-# desarrollador del Front: Carla Daniela soruco 
+## PROYECTO ANALISIS DE METRICAS REDES SOCIALES EL DEBER
+## VERSION 2 - PANTALLA COMPARACION VS COMPETENCIA
+## FECHA: 15/08/2025
+## RESPONSABLE FRONT: CARLA DANIELA SORUCO MAERTENS
+#===================================================================================== 
 # Descripción: Primera vista con gráfico de líneas (vistas en el tiempo),
 #               gráfico "solar" (sunburst), autodetección de fuente por URL
 #               (YouTube, Facebook, X, TikTok), perfiles predefinidos con
